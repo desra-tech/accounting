@@ -248,6 +248,32 @@ function testGetAccounts() {
   return getAccounts();
 }
 
+/**
+ * GUNAKAN INI untuk membuat user admin pertama kali
+ * Ganti email dengan email Google Anda
+ */
+function testCreateUserFirstTime() {
+  Logger.log('Membuat user admin pertama kali...\n');
+
+  // GANTI EMAIL INI dengan email Google Anda!
+  const result = createUserFirstTime({
+    email: Session.getActiveUser().getEmail(), // Otomatis ambil email yang sedang login
+    displayName: 'Admin User',
+    role: 'admin'
+  });
+
+  if (result.success) {
+    Logger.log('\n=== USER BERHASIL DIBUAT ===');
+    Logger.log('Lanjutkan dengan testCreateCompany()');
+  }
+
+  return result;
+}
+
+/**
+ * (DEPRECATED) Gunakan testCreateUserFirstTime() untuk setup awal
+ * Function ini butuh index di Firestore
+ */
 function testCreateUser() {
   return createUser({
     email: 'admin@example.com',

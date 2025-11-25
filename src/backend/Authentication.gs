@@ -24,18 +24,60 @@ function getCurrentUser() {
 }
 
 /**
- * Membuat user baru
+ * Membuat user baru (untuk setup awal, tanpa query)
+ * Gunakan ini untuk membuat user pertama kali
+ */
+function createUserFirstTime(userData) {
+  try {
+    const firestore = getFirestore();
+    const email = userData.email;
+    const userId = Utilities.getUuid();
+
+    const newUser = {
+      uid: userId,
+      email: email,
+      displayName: userData.displayName || email.split('@')[0],
+      role: userData.role || 'admin',
+      companyId: userData.companyId || '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true
+    };
+
+    firestore.createDocument('users/' + userId, newUser);
+
+    Logger.log('✅ User berhasil dibuat!');
+    Logger.log('   User ID: ' + userId);
+    Logger.log('   Email: ' + email);
+    Logger.log('   Role: ' + newUser.role);
+
+    return { success: true, message: 'User berhasil dibuat', userId: userId };
+  } catch (error) {
+    Logger.log('❌ Error creating user: ' + error.message);
+    Logger.log('   Stack: ' + error.stack);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Membuat user baru (dengan validasi)
+ * Gunakan ini setelah user pertama sudah ada dan index sudah dibuat
  */
 function createUser(userData) {
   try {
     const firestore = getFirestore();
     const email = userData.email;
 
-    // Cek apakah user sudah ada
-    const existingUsers = firestore.query('users').where('email', '==', email).execute();
+    // Cek apakah user sudah ada (butuh index di Firestore)
+    try {
+      const existingUsers = firestore.query('users').where('email', '==', email).execute();
 
-    if (existingUsers.length > 0) {
-      return { success: false, message: 'Email sudah terdaftar' };
+      if (existingUsers.length > 0) {
+        return { success: false, message: 'Email sudah terdaftar' };
+      }
+    } catch (queryError) {
+      // Jika query gagal (index belum ada), skip validation
+      Logger.log('⚠️  Query validation skipped (index mungkin belum ada)');
     }
 
     const userId = Utilities.getUuid();
