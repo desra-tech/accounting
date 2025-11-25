@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Keuangan UMKM</title>
+  <?!= include('src/frontend/css/styles'); ?>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <h1 class="logo">💼 Sistem Keuangan UMKM</h1>
+        <div class="user-info">
+          <span id="companyName"></span>
+          <span id="userName"></span>
+          <span id="userRole" class="badge"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <ul class="nav-menu" id="navMenu">
+        <li class="nav-item active" data-page="dashboard">
+          <a href="#dashboard">📊 Dashboard</a>
+        </li>
+        <li class="nav-item" data-page="master-data" data-role="admin">
+          <a href="#master-data">📋 Master Data</a>
+        </li>
+        <li class="nav-item" data-page="journal">
+          <a href="#journal">📝 Jurnal</a>
+        </li>
+        <li class="nav-item" data-page="reports">
+          <a href="#reports">📈 Laporan</a>
+        </li>
+        <li class="nav-item" data-page="inventory">
+          <a href="#inventory">📦 Persediaan</a>
+        </li>
+        <li class="nav-item" data-page="debt-receivable">
+          <a href="#debt-receivable">💳 Utang & Piutang</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <!-- Dashboard -->
+      <div id="dashboard-page" class="page active">
+        <h2>Dashboard</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+              <h3>Total Kas & Bank</h3>
+              <p class="stat-value" id="totalCash">Rp 0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+              <h3>Pendapatan Bulan Ini</h3>
+              <p class="stat-value" id="monthlyRevenue">Rp 0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📉</div>
+            <div class="stat-content">
+              <h3>Pengeluaran Bulan Ini</h3>
+              <p class="stat-value" id="monthlyExpense">Rp 0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💵</div>
+            <div class="stat-content">
+              <h3>Laba Bulan Ini</h3>
+              <p class="stat-value" id="monthlyProfit">Rp 0</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h3>📊 Quick Actions</h3>
+              </div>
+              <div class="card-body">
+                <div class="quick-actions">
+                  <button class="btn btn-primary" onclick="showReceiptForm()">
+                    ➕ Penerimaan
+                  </button>
+                  <button class="btn btn-danger" onclick="showExpenseForm()">
+                    ➖ Pengeluaran
+                  </button>
+                  <button class="btn btn-success" onclick="showCapitalForm()">
+                    💰 Modal
+                  </button>
+                  <button class="btn btn-info" onclick="showPage('reports')">
+                    📈 Laporan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h3>⚠️ Peringatan</h3>
+              </div>
+              <div class="card-body">
+                <div id="warningList">
+                  <p class="text-muted">Memuat data...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Master Data Page -->
+      <div id="master-data-page" class="page">
+        <h2>Master Data</h2>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="accounts">Daftar Akun</button>
+          <button class="tab-btn" data-tab="customers">Pelanggan</button>
+          <button class="tab-btn" data-tab="suppliers">Pemasok</button>
+          <button class="tab-btn" data-tab="products">Barang/Jasa</button>
+        </div>
+
+        <div class="tab-content">
+          <!-- Accounts Tab -->
+          <div id="accounts-tab" class="tab-pane active">
+            <div class="card">
+              <div class="card-header">
+                <h3>Daftar Akun</h3>
+                <button class="btn btn-primary" onclick="showAddAccountForm()">➕ Tambah Akun</button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Kode</th>
+                        <th>Nama Akun</th>
+                        <th>Kategori</th>
+                        <th>Tipe</th>
+                        <th>Saldo</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="accountsTable">
+                      <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customers Tab -->
+          <div id="customers-tab" class="tab-pane">
+            <div class="card">
+              <div class="card-header">
+                <h3>Daftar Pelanggan</h3>
+                <button class="btn btn-primary" onclick="showAddCustomerForm()">➕ Tambah Pelanggan</button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Kode</th>
+                        <th>Nama</th>
+                        <th>Telepon</th>
+                        <th>Email</th>
+                        <th>Alamat</th>
+                        <th>Saldo Piutang</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="customersTable">
+                      <tr><td colspan="7" class="text-center">Memuat data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suppliers Tab -->
+          <div id="suppliers-tab" class="tab-pane">
+            <div class="card">
+              <div class="card-header">
+                <h3>Daftar Pemasok</h3>
+                <button class="btn btn-primary" onclick="showAddSupplierForm()">➕ Tambah Pemasok</button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Kode</th>
+                        <th>Nama</th>
+                        <th>Telepon</th>
+                        <th>Email</th>
+                        <th>Alamat</th>
+                        <th>Saldo Utang</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="suppliersTable">
+                      <tr><td colspan="7" class="text-center">Memuat data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Tab -->
+          <div id="products-tab" class="tab-pane">
+            <div class="card">
+              <div class="card-header">
+                <h3>Daftar Barang/Jasa</h3>
+                <button class="btn btn-primary" onclick="showAddProductForm()">➕ Tambah Barang/Jasa</button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Kode</th>
+                        <th>Nama</th>
+                        <th>Tipe</th>
+                        <th>Satuan</th>
+                        <th>Harga Beli</th>
+                        <th>Harga Jual</th>
+                        <th>Stok</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="productsTable">
+                      <tr><td colspan="8" class="text-center">Memuat data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Journal Page (will be loaded from separate file) -->
+      <div id="journal-page" class="page">
+        <h2>Jurnal Transaksi</h2>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="receipt">Penerimaan</button>
+          <button class="tab-btn" data-tab="expense">Pengeluaran</button>
+          <button class="tab-btn" data-tab="capital">Modal</button>
+          <button class="tab-btn" data-tab="all-journals">Semua Jurnal</button>
+        </div>
+        <div id="journalContent" class="tab-content">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- Reports Page -->
+      <div id="reports-page" class="page">
+        <h2>Laporan Keuangan</h2>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="income-statement">Laba Rugi</button>
+          <button class="tab-btn" data-tab="balance-sheet">Neraca</button>
+          <button class="tab-btn" data-tab="cash-flow">Arus Kas</button>
+          <button class="tab-btn" data-tab="trial-balance">Neraca Saldo</button>
+        </div>
+        <div id="reportsContent" class="tab-content">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- Inventory Page -->
+      <div id="inventory-page" class="page">
+        <h2>Manajemen Persediaan</h2>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="stock-in">Barang Masuk</button>
+          <button class="tab-btn" data-tab="stock-out">Barang Keluar</button>
+          <button class="tab-btn" data-tab="stock-report">Laporan Stok</button>
+        </div>
+        <div id="inventoryContent" class="tab-content">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- Debt & Receivable Page -->
+      <div id="debt-receivable-page" class="page">
+        <h2>Utang & Piutang</h2>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="receivables">Piutang</button>
+          <button class="tab-btn" data-tab="payables">Utang</button>
+        </div>
+        <div id="debtReceivableContent" class="tab-content">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Container -->
+  <div id="modalContainer"></div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Memuat...</p>
+  </div>
+
+  <?!= include('src/frontend/js/app'); ?>
+</body>
+</html>
