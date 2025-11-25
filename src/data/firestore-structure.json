@@ -1,0 +1,302 @@
+{
+  "firestoreStructure": {
+    "collections": {
+      "users": {
+        "description": "Menyimpan data pengguna sistem",
+        "fields": {
+          "uid": "string (document ID)",
+          "email": "string",
+          "displayName": "string",
+          "role": "string (admin/user)",
+          "companyId": "string (reference to companies)",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp",
+          "isActive": "boolean"
+        },
+        "indexes": ["email", "companyId", "role"]
+      },
+      "companies": {
+        "description": "Menyimpan data perusahaan/UMKM",
+        "fields": {
+          "id": "string (document ID)",
+          "name": "string",
+          "address": "string",
+          "phone": "string",
+          "email": "string",
+          "taxId": "string (NPWP)",
+          "industry": "string",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp",
+          "ownerId": "string (reference to users)"
+        },
+        "indexes": ["ownerId"]
+      },
+      "accounts": {
+        "description": "Chart of Accounts - Daftar akun pembukuan",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string (reference to companies)",
+          "code": "string (1-1001)",
+          "name": "string",
+          "type": "string (header/detail)",
+          "category": "string (asset/liability/equity/revenue/cogs/expense/other)",
+          "normalBalance": "string (debit/credit)",
+          "level": "number",
+          "parentId": "string",
+          "balance": "number",
+          "isActive": "boolean",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "code", "category", "type"]
+      },
+      "customers": {
+        "description": "Data pelanggan",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "code": "string (CUST-001)",
+          "name": "string",
+          "type": "string (customer/supplier/both)",
+          "phone": "string",
+          "email": "string",
+          "address": "string",
+          "city": "string",
+          "taxId": "string",
+          "balance": "number (piutang)",
+          "creditLimit": "number",
+          "isActive": "boolean",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "code", "type"]
+      },
+      "suppliers": {
+        "description": "Data pemasok",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "code": "string (SUPP-001)",
+          "name": "string",
+          "phone": "string",
+          "email": "string",
+          "address": "string",
+          "city": "string",
+          "taxId": "string",
+          "balance": "number (utang)",
+          "creditTerm": "number (hari)",
+          "isActive": "boolean",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "code"]
+      },
+      "products": {
+        "description": "Data barang/jasa",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "code": "string (PRD-001)",
+          "name": "string",
+          "type": "string (product/service)",
+          "category": "string",
+          "unit": "string (pcs/kg/liter/dll)",
+          "purchasePrice": "number",
+          "sellingPrice": "number",
+          "stock": "number",
+          "minStock": "number",
+          "description": "string",
+          "isActive": "boolean",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "code", "type", "category"]
+      },
+      "journals": {
+        "description": "Jurnal transaksi keuangan",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "journalNo": "string (JRN-2024-001)",
+          "journalType": "string (receipt/expense/capital/general)",
+          "transactionDate": "timestamp",
+          "description": "string",
+          "reference": "string",
+          "totalAmount": "number",
+          "status": "string (draft/posted/void)",
+          "createdBy": "string (user ID)",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp",
+          "postedAt": "timestamp",
+          "voidedAt": "timestamp"
+        },
+        "indexes": ["companyId", "journalType", "transactionDate", "status"],
+        "subcollections": {
+          "entries": {
+            "description": "Detail baris jurnal (debit/kredit)",
+            "fields": {
+              "id": "string (document ID)",
+              "accountId": "string (reference to accounts)",
+              "accountCode": "string",
+              "accountName": "string",
+              "description": "string",
+              "debit": "number",
+              "credit": "number",
+              "customerId": "string (optional)",
+              "supplierId": "string (optional)",
+              "productId": "string (optional)"
+            }
+          }
+        }
+      },
+      "transactions": {
+        "description": "Transaksi penerimaan dan pengeluaran",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "transactionNo": "string (TRX-2024-001)",
+          "type": "string (receipt/expense)",
+          "transactionDate": "timestamp",
+          "accountId": "string (kas/bank)",
+          "amount": "number",
+          "paymentMethod": "string (cash/transfer/check)",
+          "category": "string",
+          "customerId": "string",
+          "supplierId": "string",
+          "description": "string",
+          "reference": "string",
+          "journalId": "string (reference to journals)",
+          "createdBy": "string",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "type", "transactionDate", "accountId"]
+      },
+      "capitals": {
+        "description": "Transaksi modal (investasi/penarikan)",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "capitalNo": "string (CAP-2024-001)",
+          "type": "string (investment/withdrawal)",
+          "transactionDate": "timestamp",
+          "amount": "number",
+          "description": "string",
+          "journalId": "string",
+          "createdBy": "string",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "type", "transactionDate"]
+      },
+      "inventory": {
+        "description": "Kartu stok persediaan",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "productId": "string",
+          "transactionDate": "timestamp",
+          "transactionType": "string (in/out/adjustment)",
+          "referenceNo": "string",
+          "quantity": "number",
+          "unitPrice": "number",
+          "totalPrice": "number",
+          "stockBefore": "number",
+          "stockAfter": "number",
+          "description": "string",
+          "createdBy": "string",
+          "createdAt": "timestamp"
+        },
+        "indexes": ["companyId", "productId", "transactionDate", "transactionType"]
+      },
+      "receivables": {
+        "description": "Piutang usaha",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "receivableNo": "string (AR-2024-001)",
+          "customerId": "string",
+          "customerName": "string",
+          "transactionDate": "timestamp",
+          "dueDate": "timestamp",
+          "amount": "number",
+          "paid": "number",
+          "balance": "number",
+          "status": "string (unpaid/partial/paid/overdue)",
+          "description": "string",
+          "invoiceNo": "string",
+          "journalId": "string",
+          "createdBy": "string",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "customerId", "status", "dueDate"]
+      },
+      "payables": {
+        "description": "Utang usaha",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "payableNo": "string (AP-2024-001)",
+          "supplierId": "string",
+          "supplierName": "string",
+          "transactionDate": "timestamp",
+          "dueDate": "timestamp",
+          "amount": "number",
+          "paid": "number",
+          "balance": "number",
+          "status": "string (unpaid/partial/paid/overdue)",
+          "description": "string",
+          "invoiceNo": "string",
+          "journalId": "string",
+          "createdBy": "string",
+          "createdAt": "timestamp",
+          "updatedAt": "timestamp"
+        },
+        "indexes": ["companyId", "supplierId", "status", "dueDate"]
+      },
+      "payments": {
+        "description": "Pembayaran piutang/utang",
+        "fields": {
+          "id": "string (document ID)",
+          "companyId": "string",
+          "paymentNo": "string (PMT-2024-001)",
+          "type": "string (receivable/payable)",
+          "paymentDate": "timestamp",
+          "referenceId": "string (receivableId/payableId)",
+          "amount": "number",
+          "paymentMethod": "string",
+          "accountId": "string (kas/bank)",
+          "description": "string",
+          "journalId": "string",
+          "createdBy": "string",
+          "createdAt": "timestamp"
+        },
+        "indexes": ["companyId", "type", "paymentDate", "referenceId"]
+      },
+      "settings": {
+        "description": "Pengaturan sistem per perusahaan",
+        "fields": {
+          "id": "string (companyId as document ID)",
+          "companyId": "string",
+          "fiscalYearStart": "string (MM-DD)",
+          "fiscalYearEnd": "string (MM-DD)",
+          "currency": "string (IDR)",
+          "taxRate": "number",
+          "receiptPrefix": "string (RCP)",
+          "expensePrefix": "string (EXP)",
+          "journalPrefix": "string (JRN)",
+          "invoicePrefix": "string (INV)",
+          "updatedAt": "timestamp"
+        }
+      }
+    },
+    "securityRules": {
+      "notes": "Implementasikan role-based access control di Firestore Rules",
+      "rules": {
+        "admin": "Full access ke semua data dalam companyId mereka",
+        "user": "Read: semua data, Write: hanya journals, transactions, inventory, receivables, payables, payments"
+      }
+    }
+  }
+}
