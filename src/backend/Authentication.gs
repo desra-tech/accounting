@@ -33,28 +33,42 @@ function createUserFirstTime(userData) {
     const email = userData.email;
     const userId = Utilities.getUuid();
 
+    // Format timestamp sebagai string ISO untuk kompatibilitas
+    const now = new Date().toISOString();
+
     const newUser = {
       uid: userId,
       email: email,
       displayName: userData.displayName || email.split('@')[0],
       role: userData.role || 'admin',
       companyId: userData.companyId || '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
       isActive: true
     };
+
+    Logger.log('📝 Data user yang akan dibuat:');
+    Logger.log('   User ID: ' + userId);
+    Logger.log('   Email: ' + email);
+    Logger.log('   Role: ' + newUser.role);
+    Logger.log('   Timestamp: ' + now);
+    Logger.log('\n🔄 Menulis ke Firestore...');
 
     firestore.createDocument('users/' + userId, newUser);
 
     Logger.log('✅ User berhasil dibuat!');
-    Logger.log('   User ID: ' + userId);
-    Logger.log('   Email: ' + email);
-    Logger.log('   Role: ' + newUser.role);
-
     return { success: true, message: 'User berhasil dibuat', userId: userId };
   } catch (error) {
     Logger.log('❌ Error creating user: ' + error.message);
+    Logger.log('   Error name: ' + error.name);
     Logger.log('   Stack: ' + error.stack);
+
+    // Coba diagnosa lebih detail
+    Logger.log('\n🔍 Diagnosis:');
+    Logger.log('   Firestore instance: ' + (firestore ? 'OK' : 'NULL'));
+    Logger.log('   Email: ' + (email ? email : 'EMPTY'));
+    Logger.log('   User ID: ' + (userId ? userId : 'EMPTY'));
+
     return { success: false, message: error.message };
   }
 }
