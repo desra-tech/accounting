@@ -41,16 +41,99 @@ function getFirestore() {
 }
 
 /**
+ * Validasi Script Properties sebelum connect ke Firestore
+ * JALANKAN FUNCTION INI DULU untuk debug masalah credentials
+ */
+function validateFirebaseCredentials() {
+  Logger.log('=== VALIDASI FIREBASE CREDENTIALS ===\n');
+
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const email = scriptProperties.getProperty('FIREBASE_EMAIL');
+  const key = scriptProperties.getProperty('FIREBASE_KEY');
+  const projectId = scriptProperties.getProperty('FIREBASE_PROJECT_ID');
+
+  let allValid = true;
+
+  // Check EMAIL
+  if (!email) {
+    Logger.log('❌ FIREBASE_EMAIL: TIDAK ADA');
+    Logger.log('   → Tambahkan di Script Properties\n');
+    allValid = false;
+  } else {
+    Logger.log('✅ FIREBASE_EMAIL: ' + email + '\n');
+  }
+
+  // Check PROJECT_ID
+  if (!projectId) {
+    Logger.log('❌ FIREBASE_PROJECT_ID: TIDAK ADA');
+    Logger.log('   → Tambahkan di Script Properties\n');
+    allValid = false;
+  } else {
+    Logger.log('✅ FIREBASE_PROJECT_ID: ' + projectId + '\n');
+  }
+
+  // Check KEY (paling penting!)
+  if (!key) {
+    Logger.log('❌ FIREBASE_KEY: TIDAK ADA');
+    Logger.log('   → Tambahkan di Script Properties');
+    Logger.log('   → Copy dari file JSON service account');
+    Logger.log('   → Harus include -----BEGIN PRIVATE KEY----- dan -----END PRIVATE KEY-----\n');
+    allValid = false;
+  } else {
+    // Validate key format
+    const hasBegin = key.indexOf('-----BEGIN PRIVATE KEY-----') !== -1;
+    const hasEnd = key.indexOf('-----END PRIVATE KEY-----') !== -1;
+    const keyLength = key.length;
+
+    Logger.log('🔑 FIREBASE_KEY:');
+    Logger.log('   Length: ' + keyLength + ' characters');
+    Logger.log('   Has BEGIN marker: ' + (hasBegin ? '✅' : '❌'));
+    Logger.log('   Has END marker: ' + (hasEnd ? '✅' : '❌'));
+
+    if (!hasBegin || !hasEnd) {
+      Logger.log('\n   ⚠️  KEY FORMAT SALAH!');
+      Logger.log('   → Key harus include BEGIN dan END markers');
+      Logger.log('   → Copy ulang dari file JSON service account');
+      Logger.log('   → Pastikan copy seluruh value dari field "private_key"\n');
+      allValid = false;
+    } else if (keyLength < 1600) {
+      Logger.log('   ⚠️  KEY terlalu pendek (kemungkinan tidak lengkap)\n');
+      allValid = false;
+    } else {
+      Logger.log('   ✅ Format key terlihat valid\n');
+    }
+  }
+
+  Logger.log('=== HASIL VALIDASI ===');
+  if (allValid) {
+    Logger.log('✅ Semua credentials valid! Lanjutkan ke testFirestoreConnection()');
+    return { success: true, message: 'Credentials valid' };
+  } else {
+    Logger.log('❌ Ada masalah dengan credentials. Perbaiki dulu sebelum lanjut.');
+    Logger.log('\nCARA MEMPERBAIKI:');
+    Logger.log('1. Buka: Project Settings (⚙️) > Script Properties');
+    Logger.log('2. Pastikan ada 3 properties: FIREBASE_EMAIL, FIREBASE_KEY, FIREBASE_PROJECT_ID');
+    Logger.log('3. Untuk FIREBASE_KEY, copy dari file JSON service account');
+    Logger.log('4. Jalankan validateFirebaseCredentials() lagi untuk verify');
+    return { success: false, message: 'Credentials tidak valid' };
+  }
+}
+
+/**
  * Test koneksi ke Firestore
+ * JALANKAN validateFirebaseCredentials() DULU sebelum function ini
  */
 function testFirestoreConnection() {
   try {
+    Logger.log('Mencoba koneksi ke Firestore...\n');
     const firestore = getFirestore();
     Logger.log('✓ Koneksi ke Firestore berhasil!');
     Logger.log('Project ID: ' + getFirebaseConfig().projectId);
     return { success: true, message: 'Koneksi berhasil' };
   } catch (error) {
     Logger.log('✗ Koneksi gagal: ' + error.message);
+    Logger.log('\nJika error "Invalid argument: key":');
+    Logger.log('→ Jalankan validateFirebaseCredentials() untuk debug');
     return { success: false, message: error.message };
   }
 }
