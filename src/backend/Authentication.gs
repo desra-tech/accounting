@@ -28,10 +28,32 @@ function getCurrentUser() {
  * Gunakan ini untuk membuat user pertama kali
  */
 function createUserFirstTime(userData) {
+  Logger.log('🚀 Function createUserFirstTime dipanggil');
+  Logger.log('   Parameter userData: ' + (userData ? 'ADA' : 'UNDEFINED'));
+
+  if (!userData) {
+    Logger.log('❌ ERROR: userData is undefined!');
+    return { success: false, message: 'userData parameter is required' };
+  }
+
+  if (!userData.email) {
+    Logger.log('❌ ERROR: userData.email is undefined!');
+    return { success: false, message: 'email is required' };
+  }
+
+  Logger.log('   Email dari parameter: ' + userData.email);
+
   try {
+    Logger.log('\n🔗 Mendapatkan Firestore instance...');
     const firestore = getFirestore();
+    Logger.log('✅ Firestore instance berhasil didapat');
+
     const email = userData.email;
     const userId = Utilities.getUuid();
+
+    Logger.log('📝 Membuat data user...');
+    Logger.log('   User ID: ' + userId);
+    Logger.log('   Email: ' + email);
 
     // Format timestamp sebagai string ISO untuk kompatibilitas
     const now = new Date().toISOString();
@@ -47,28 +69,21 @@ function createUserFirstTime(userData) {
       isActive: true
     };
 
-    Logger.log('📝 Data user yang akan dibuat:');
-    Logger.log('   User ID: ' + userId);
-    Logger.log('   Email: ' + email);
+    Logger.log('   Display Name: ' + newUser.displayName);
     Logger.log('   Role: ' + newUser.role);
     Logger.log('   Timestamp: ' + now);
-    Logger.log('\n🔄 Menulis ke Firestore...');
 
+    Logger.log('\n🔄 Menulis ke Firestore collection "users"...');
     firestore.createDocument('users/' + userId, newUser);
 
     Logger.log('✅ User berhasil dibuat!');
     return { success: true, message: 'User berhasil dibuat', userId: userId };
   } catch (error) {
-    Logger.log('❌ Error creating user: ' + error.message);
+    Logger.log('\n❌ Error creating user: ' + error.message);
     Logger.log('   Error name: ' + error.name);
-    Logger.log('   Stack: ' + error.stack);
-
-    // Coba diagnosa lebih detail
-    Logger.log('\n🔍 Diagnosis:');
-    Logger.log('   Firestore instance: ' + (firestore ? 'OK' : 'NULL'));
-    Logger.log('   Email: ' + (email ? email : 'EMPTY'));
-    Logger.log('   User ID: ' + (userId ? userId : 'EMPTY'));
-
+    if (error.stack) {
+      Logger.log('   Stack: ' + error.stack);
+    }
     return { success: false, message: error.message };
   }
 }
