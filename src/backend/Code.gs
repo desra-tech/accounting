@@ -9,14 +9,8 @@
  * Fungsi utama untuk menampilkan web app
  */
 function doGet(e) {
-  const user = Session.getActiveUser().getEmail();
-
-  if (!user) {
-    return HtmlService.createHtmlOutputFromFile('login')
-      .setTitle('Login - Sistem Keuangan UMKM')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-  }
-
+  // Apps Script sudah handle Google authentication otomatis
+  // Langsung load aplikasi
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('Sistem Keuangan UMKM')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
