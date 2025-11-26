@@ -100,6 +100,8 @@ Sistem informasi keuangan berbasis web untuk UMKM (Usaha Mikro Kecil dan Menenga
 
 📚 **[PANDUAN_IMPLEMENTASI.md](./PANDUAN_IMPLEMENTASI.md)** - Panduan lengkap step-by-step
 
+⚠️ **[WORKAROUND_MANUAL_SETUP.md](./WORKAROUND_MANUAL_SETUP.md)** - Solusi manual setup jika ada error "Invalid argument: key"
+
 ## 📁 Struktur Proyek
 
 ```
@@ -154,6 +156,16 @@ accounting/
 - [ ] E-commerce integration
 
 ## 🐛 Troubleshooting
+
+### Error "Invalid argument: key"
+
+Jika Anda mendapat error ini saat menjalankan `testCreateUser()` atau `testGetCurrentUser()`:
+
+🔧 **Gunakan manual setup workaround**: [WORKAROUND_MANUAL_SETUP.md](./WORKAROUND_MANUAL_SETUP.md)
+
+Error ini terjadi karena kompatibilitas FirestoreApp library. Solusi manual setup akan membuat user dan company langsung dari Firestore Console.
+
+### Troubleshooting Lainnya
 
 Lihat [PANDUAN_IMPLEMENTASI.md](./PANDUAN_IMPLEMENTASI.md) untuk troubleshooting lengkap.
 
