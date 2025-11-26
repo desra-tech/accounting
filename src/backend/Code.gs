@@ -12,12 +12,12 @@ function doGet(e) {
   const user = Session.getActiveUser().getEmail();
 
   if (!user) {
-    return HtmlService.createHtmlOutputFromFile('src/frontend/login')
+    return HtmlService.createHtmlOutputFromFile('login')
       .setTitle('Login - Sistem Keuangan UMKM')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
-  return HtmlService.createHtmlOutputFromFile('src/frontend/index')
+  return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('Sistem Keuangan UMKM')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
