@@ -5,6 +5,81 @@
  */
 
 /**
+ * DIAGNOSTIC: Verify private key format
+ * Run this first untuk check apakah format key sudah benar
+ */
+function verifyPrivateKeyFormat() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const key = scriptProperties.getProperty('FIREBASE_KEY');
+
+  if (!key) {
+    Logger.log('❌ FIREBASE_KEY tidak ditemukan di Script Properties!');
+    return { success: false, message: 'FIREBASE_KEY not found' };
+  }
+
+  const hasBegin = key.includes('-----BEGIN PRIVATE KEY-----');
+  const hasEnd = key.includes('-----END PRIVATE KEY-----');
+  const newlineCount = (key.match(/\n/g) || []).length;
+  const length = key.length;
+
+  Logger.log('=== PRIVATE KEY FORMAT VERIFICATION ===');
+  Logger.log('✓ Key found: YES');
+  Logger.log('✓ Key length: ' + length + ' chars ' + (length > 1600 && length < 1800 ? '✅' : '⚠️ Should be 1600-1800'));
+  Logger.log('✓ Has BEGIN marker: ' + (hasBegin ? '✅ YES' : '❌ NO'));
+  Logger.log('✓ Has END marker: ' + (hasEnd ? '✅ YES' : '❌ NO'));
+  Logger.log('✓ Newline count: ' + newlineCount + ' ' + (newlineCount >= 25 ? '✅' : '❌ Should be 25-30+'));
+  Logger.log('');
+  Logger.log('First 100 chars:');
+  Logger.log(key.substring(0, 100));
+  Logger.log('');
+  Logger.log('Last 100 chars:');
+  Logger.log(key.substring(key.length - 100));
+  Logger.log('');
+
+  if (!hasBegin || !hasEnd || newlineCount < 25) {
+    Logger.log('❌ PRIVATE KEY FORMAT SALAH!');
+    Logger.log('');
+    Logger.log('📝 Cara fix:');
+    Logger.log('1. Baca file PRIVATE_KEY_SETUP_FIX.md');
+    Logger.log('2. Re-paste private key dengan newlines yang benar');
+    Logger.log('3. Run verifyPrivateKeyFormat() lagi');
+    return { success: false, message: 'Invalid key format' };
+  }
+
+  Logger.log('✅ PRIVATE KEY FORMAT BENAR!');
+  Logger.log('📝 Next: Run testGetUserViaREST()');
+  return { success: true };
+}
+
+/**
+ * SETUP: Paste private key dengan format yang benar
+ * CARA PAKAI:
+ * 1. Edit function ini
+ * 2. Paste private key dari JSON file ke dalam backticks
+ * 3. Run function ini
+ * 4. Hapus private key dari code (security)
+ */
+function setupFirebaseKeyCorrectly() {
+  // PASTE PRIVATE KEY DI SINI (termasuk header/footer):
+  const privateKey = `-----BEGIN PRIVATE KEY-----
+PASTE_YOUR_PRIVATE_KEY_HERE_WITH_ACTUAL_NEWLINES
+-----END PRIVATE KEY-----
+`;
+
+  if (privateKey.includes('PASTE_YOUR_PRIVATE_KEY_HERE')) {
+    Logger.log('❌ Anda belum paste private key!');
+    Logger.log('📝 Edit function ini dan paste private key Anda di dalam backticks');
+    return;
+  }
+
+  PropertiesService.getScriptProperties().setProperty('FIREBASE_KEY', privateKey);
+
+  Logger.log('✅ Private key berhasil disimpan!');
+  Logger.log('📝 Next: Run verifyPrivateKeyFormat() untuk verify');
+  Logger.log('⚠️  PENTING: Hapus private key dari function ini sekarang! (security)');
+}
+
+/**
  * Get OAuth2 Access Token untuk Firebase REST API
  */
 function getFirebaseAccessToken() {
