@@ -5,22 +5,37 @@
 
 /**
  * Mendapatkan user yang sedang login
+ * UPDATED: Menggunakan REST API untuk bypass error
  */
 function getCurrentUser() {
   const email = Session.getActiveUser().getEmail();
 
   if (!email) {
-    return null;
+    return { success: false, message: 'Not logged in' };
   }
 
-  const firestore = getFirestore();
-  const users = firestore.query('users').where('email', '==', email).execute();
+  try {
+    // Get user by email using REST API
+    const user = getUserByEmailViaREST(email);
 
-  if (users.length > 0) {
-    return users[0].fields;
+    if (user) {
+      return {
+        success: true,
+        user: user
+      };
+    } else {
+      return {
+        success: false,
+        message: 'User not found. Please contact admin to setup your account.'
+      };
+    }
+  } catch (error) {
+    Logger.log('Error in getCurrentUser: ' + error.message);
+    return {
+      success: false,
+      message: error.message
+    };
   }
-
-  return null;
 }
 
 /**

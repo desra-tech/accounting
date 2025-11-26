@@ -289,6 +289,74 @@ function parseFirestoreDocument(doc) {
 }
 
 /**
+ * Get user by email menggunakan REST API
+ * Digunakan oleh getCurrentUser() untuk login
+ */
+function getUserByEmailViaREST(email) {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const projectId = scriptProperties.getProperty('FIREBASE_PROJECT_ID');
+
+  try {
+    const accessToken = getFirebaseAccessToken();
+
+    // Query Firestore untuk user dengan email tertentu
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+
+    const query = {
+      structuredQuery: {
+        from: [{ collectionId: 'users' }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'email' },
+            op: 'EQUAL',
+            value: { stringValue: email }
+          }
+        },
+        limit: 1
+      }
+    };
+
+    const options = {
+      method: 'post',
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(query),
+      muteHttpExceptions: true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const statusCode = response.getResponseCode();
+
+    if (statusCode === 200) {
+      const results = JSON.parse(response.getContentText());
+
+      // Check if we got results
+      if (results && results.length > 0 && results[0].document) {
+        const doc = results[0].document;
+        const user = parseFirestoreDocument(doc);
+
+        // Add document ID
+        const pathParts = doc.name.split('/');
+        user.id = pathParts[pathParts.length - 1];
+
+        return user;
+      } else {
+        Logger.log('No user found with email: ' + email);
+        return null;
+      }
+    } else {
+      Logger.log('Error querying user: ' + response.getContentText());
+      return null;
+    }
+  } catch (error) {
+    Logger.log('Error in getUserByEmailViaREST: ' + error.message);
+    throw error;
+  }
+}
+
+/**
  * TEST: Get user menggunakan REST API
  */
 function testGetUserViaREST() {
