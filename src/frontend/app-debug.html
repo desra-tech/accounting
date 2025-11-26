@@ -1,0 +1,234 @@
+<script>
+// Global variables
+let currentUser = null;
+let currentCompany = null;
+let currentPage = 'dashboard';
+
+// Initialize app on load
+window.addEventListener('DOMContentLoaded', initApp);
+
+function initApp() {
+  console.log('🚀 Initializing app...');
+
+  // Remove "Loading aplikasi..." text immediately
+  const loadingTexts = document.querySelectorAll('body > p, body > div');
+  loadingTexts.forEach(el => {
+    if (el.textContent.includes('Loading aplikasi')) {
+      el.remove();
+    }
+  });
+
+  loadUserData();
+  setupNavigation();
+  setupTabs();
+}
+
+function loadUserData() {
+  console.log('📞 Calling getCurrentUser()...');
+  showLoading();
+
+  // Set timeout to prevent infinite loading
+  const timeout = setTimeout(function() {
+    hideLoading();
+    console.error('⏱️ Timeout: getCurrentUser() took too long');
+    alert('Error: Request timeout. Please check your internet connection and try again.');
+  }, 10000); // 10 second timeout
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      clearTimeout(timeout);
+      hideLoading();
+      console.log('✅ getCurrentUser() response:', result);
+
+      if (result && result.success) {
+        currentUser = result.user;
+        console.log('👤 User loaded:', currentUser);
+        displayUserInfo();
+        loadDashboardData();
+      } else {
+        console.error('❌ getCurrentUser() failed:', result);
+        alert('Error: ' + (result ? result.message : 'Unknown error'));
+
+        // Show basic interface anyway
+        document.getElementById('userName').textContent = 'Guest User';
+        document.getElementById('userRole').textContent = 'guest';
+        document.getElementById('companyName').textContent = 'UMKM';
+      }
+    })
+    .withFailureHandler(function(error) {
+      clearTimeout(timeout);
+      hideLoading();
+      console.error('❌ getCurrentUser() error:', error);
+      alert('Error calling backend: ' + error.message);
+
+      // Show basic interface anyway
+      document.getElementById('userName').textContent = 'Guest User';
+      document.getElementById('userRole').textContent = 'guest';
+      document.getElementById('companyName').textContent = 'UMKM';
+    })
+    .getCurrentUser();
+}
+
+function displayUserInfo() {
+  if (!currentUser) return;
+
+  document.getElementById('userName').textContent = currentUser.displayName || currentUser.email || 'User';
+  document.getElementById('userRole').textContent = currentUser.role || 'user';
+  document.getElementById('companyName').textContent = currentUser.companyName || 'UMKM';
+
+  // Hide admin-only menus for regular users
+  if (currentUser.role !== 'admin') {
+    document.querySelectorAll('[data-role="admin"]').forEach(el => {
+      el.style.display = 'none';
+    });
+  }
+}
+
+function loadDashboardData() {
+  console.log('📊 Loading dashboard data...');
+  google.script.run
+    .withSuccessHandler(function(result) {
+      console.log('✅ Dashboard data:', result);
+      if (result && result.success) {
+        updateDashboardStats(result.data);
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Dashboard error:', error);
+    })
+    .getDashboardStats();
+}
+
+function updateDashboardStats(data) {
+  if (!data) return;
+
+  document.getElementById('totalCash').textContent = formatCurrency(data.totalCash || 0);
+  document.getElementById('monthlyRevenue').textContent = formatCurrency(data.monthlyRevenue || 0);
+  document.getElementById('monthlyExpense').textContent = formatCurrency(data.monthlyExpense || 0);
+  document.getElementById('monthlyProfit').textContent = formatCurrency(data.monthlyProfit || 0);
+}
+
+function setupNavigation() {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const page = this.getAttribute('data-page');
+      showPage(page);
+    });
+  });
+}
+
+function showPage(pageName) {
+  // Update active menu
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.getAttribute('data-page') === pageName) {
+      item.classList.add('active');
+    }
+  });
+
+  // Update active page
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.remove('active');
+  });
+
+  const pageElement = document.getElementById(pageName + '-page');
+  if (pageElement) {
+    pageElement.classList.add('active');
+    currentPage = pageName;
+    loadPageData(pageName);
+  }
+}
+
+function loadPageData(pageName) {
+  console.log('📄 Loading page:', pageName);
+  switch(pageName) {
+    case 'dashboard':
+      loadDashboardData();
+      break;
+    case 'master-data':
+      console.log('Master Data - Coming soon');
+      break;
+    case 'journal':
+      console.log('Journal - Coming soon');
+      break;
+    case 'reports':
+      console.log('Reports - Coming soon');
+      break;
+    case 'inventory':
+      console.log('Inventory - Coming soon');
+      break;
+    case 'debt-receivable':
+      console.log('Debt/Receivable - Coming soon');
+      break;
+  }
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
+      const parent = this.closest('.tabs');
+
+      // Update active tab button
+      parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      // Update active tab pane
+      const content = parent.nextElementSibling;
+      if (content) {
+        content.querySelectorAll('.tab-pane').forEach(pane => {
+          pane.classList.remove('active');
+        });
+        const targetPane = document.getElementById(tabName + '-tab');
+        if (targetPane) {
+          targetPane.classList.add('active');
+        }
+      }
+    });
+  });
+}
+
+// Utility functions
+function formatCurrency(amount) {
+  return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+}
+
+function showLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.add('active');
+  }
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+}
+
+function showError(message) {
+  alert('Error: ' + message);
+  console.error(message);
+}
+
+function showSuccess(message) {
+  alert('Success: ' + message);
+  console.log(message);
+}
+
+// Placeholder functions for Quick Actions
+function showReceiptForm() {
+  showPage('journal');
+}
+
+function showExpenseForm() {
+  showPage('journal');
+}
+
+function showCapitalForm() {
+  showPage('journal');
+}
+
+console.log('✅ App script loaded successfully');
+</script>
