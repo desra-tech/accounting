@@ -74,7 +74,26 @@ function createUserFirstTime(userData) {
     Logger.log('   Timestamp: ' + now);
 
     Logger.log('\n🔄 Menulis ke Firestore collection "users"...');
-    firestore.createDocument('users/' + userId, newUser);
+    Logger.log('   Document path: users/' + userId);
+
+    // Try-catch untuk createDocument
+    try {
+      // Coba method 1: createDocument dengan path lengkap
+      firestore.createDocument('users/' + userId, newUser);
+      Logger.log('✅ Method createDocument berhasil!');
+    } catch (createError) {
+      Logger.log('⚠️  Method createDocument gagal: ' + createError.message);
+      Logger.log('🔄 Mencoba alternative method...');
+
+      // Alternative: Gunakan updateDocument dengan create flag
+      try {
+        firestore.updateDocument('users/' + userId, newUser, true);
+        Logger.log('✅ Method updateDocument berhasil!');
+      } catch (updateError) {
+        Logger.log('❌ Method updateDocument juga gagal: ' + updateError.message);
+        throw new Error('Tidak bisa menulis ke Firestore: ' + updateError.message);
+      }
+    }
 
     Logger.log('✅ User berhasil dibuat!');
     return { success: true, message: 'User berhasil dibuat', userId: userId };
