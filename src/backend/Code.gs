@@ -248,6 +248,32 @@ function testGetAccounts() {
   return getAccounts();
 }
 
+/**
+ * GUNAKAN INI untuk membuat user admin pertama kali
+ * Ganti email dengan email Google Anda
+ */
+function testCreateUserFirstTime() {
+  Logger.log('Membuat user admin pertama kali...\n');
+
+  // GANTI EMAIL INI dengan email Google Anda!
+  const result = createUserFirstTime({
+    email: Session.getActiveUser().getEmail(), // Otomatis ambil email yang sedang login
+    displayName: 'Admin User',
+    role: 'admin'
+  });
+
+  if (result.success) {
+    Logger.log('\n=== USER BERHASIL DIBUAT ===');
+    Logger.log('Lanjutkan dengan testCreateCompany()');
+  }
+
+  return result;
+}
+
+/**
+ * (DEPRECATED) Gunakan testCreateUserFirstTime() untuk setup awal
+ * Function ini butuh index di Firestore
+ */
 function testCreateUser() {
   return createUser({
     email: 'admin@example.com',
@@ -265,4 +291,118 @@ function testCreateCompany() {
     taxId: '01.234.567.8-901.000',
     industry: 'Retail'
   });
+}
+
+/**
+ * MANUAL SETUP FUNCTIONS - Untuk bypass query error
+ */
+
+/**
+ * Get user by document ID (bypass query yang error)
+ * Lihat document ID di Firestore Console > users collection
+ */
+function testGetUserByIdManual() {
+  // GANTI dengan document ID dari Firestore Console
+  const userId = 'PASTE_DOCUMENT_ID_DISINI';  // Contoh: 'adf6b720-f7f7-49d0-bca0-5f0ffd1f75d2'
+
+  try {
+    const firestore = getFirestore();
+    Logger.log('🔍 Mengambil user dengan ID: ' + userId);
+
+    const userDoc = firestore.getDocument('users/' + userId);
+
+    if (userDoc && userDoc.fields) {
+      Logger.log('✅ User found!');
+      Logger.log('   Email: ' + userDoc.fields.email);
+      Logger.log('   Role: ' + userDoc.fields.role);
+      Logger.log('   Company ID: ' + (userDoc.fields.companyId || '(belum ada)'));
+      return { success: true, user: userDoc.fields };
+    } else {
+      Logger.log('❌ User not found');
+      return { success: false, message: 'User not found' };
+    }
+  } catch (error) {
+    Logger.log('❌ Error: ' + error.message);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Create company MANUAL (bypass getCurrentUser yang error)
+ * Ganti userId dengan document ID user dari Firestore Console
+ */
+function testCreateCompanyManual() {
+  // GANTI dengan document ID user dari Firestore Console
+  const userId = 'PASTE_DOCUMENT_ID_DISINI';  // Contoh: 'adf6b720-f7f7-49d0-bca0-5f0ffd1f75d2'
+
+  try {
+    const firestore = getFirestore();
+    Logger.log('🏢 Membuat company...\n');
+
+    const companyId = Utilities.getUuid();
+    const now = new Date().toISOString();
+
+    const newCompany = {
+      id: companyId,
+      name: 'UMKM Contoh',
+      address: 'Jl. Contoh No. 123',
+      phone: '08123456789',
+      email: 'info@umkmcontoh.com',
+      taxId: '01.234.567.8-901.000',
+      industry: 'Retail',
+      createdAt: now,
+      updatedAt: now,
+      ownerId: userId
+    };
+
+    Logger.log('   Company ID: ' + companyId);
+    Logger.log('   Name: ' + newCompany.name);
+
+    firestore.createDocument('companies/' + companyId, newCompany);
+    Logger.log('✅ Company created!\n');
+
+    // Update user dengan companyId
+    Logger.log('🔄 Update user dengan companyId...');
+    firestore.updateDocument('users/' + userId, {
+      companyId: companyId,
+      role: 'admin',
+      updatedAt: now
+    });
+    Logger.log('✅ User updated!\n');
+
+    // Initialize Chart of Accounts
+    Logger.log('📊 Initialize Chart of Accounts (57 akun)...');
+    initializeChartOfAccounts(companyId);
+    Logger.log('✅ COA initialized!\n');
+
+    // Initialize Settings
+    Logger.log('⚙️  Initialize Settings...');
+    const settings = {
+      companyId: companyId,
+      fiscalYearStart: '01-01',
+      fiscalYearEnd: '12-31',
+      currency: 'IDR',
+      taxRate: 11,
+      receiptPrefix: 'RCP',
+      expensePrefix: 'EXP',
+      journalPrefix: 'JRN',
+      invoicePrefix: 'INV',
+      updatedAt: now
+    };
+    firestore.createDocument('settings/' + companyId, settings);
+    Logger.log('✅ Settings initialized!\n');
+
+    Logger.log('🎉 ===== SEMUA SETUP BERHASIL! =====');
+    Logger.log('   Company ID: ' + companyId);
+    Logger.log('   User ID: ' + userId);
+    Logger.log('\n📝 Next: Deploy Web App dan akses aplikasi!');
+
+    return { success: true, message: 'Setup completed', companyId: companyId };
+  } catch (error) {
+    Logger.log('❌ Error: ' + error.message);
+    if (error.stack) {
+      Logger.log('   Stack: ' + error.stack);
+    }
+    return { success: false, message: error.message };
+  }
 }

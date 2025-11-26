@@ -24,18 +24,108 @@ function getCurrentUser() {
 }
 
 /**
- * Membuat user baru
+ * Membuat user baru (untuk setup awal, tanpa query)
+ * Gunakan ini untuk membuat user pertama kali
+ */
+function createUserFirstTime(userData) {
+  Logger.log('🚀 Function createUserFirstTime dipanggil');
+  Logger.log('   Parameter userData: ' + (userData ? 'ADA' : 'UNDEFINED'));
+
+  if (!userData) {
+    Logger.log('❌ ERROR: userData is undefined!');
+    return { success: false, message: 'userData parameter is required' };
+  }
+
+  if (!userData.email) {
+    Logger.log('❌ ERROR: userData.email is undefined!');
+    return { success: false, message: 'email is required' };
+  }
+
+  Logger.log('   Email dari parameter: ' + userData.email);
+
+  try {
+    Logger.log('\n🔗 Mendapatkan Firestore instance...');
+    const firestore = getFirestore();
+    Logger.log('✅ Firestore instance berhasil didapat');
+
+    const email = userData.email;
+    const userId = Utilities.getUuid();
+
+    Logger.log('📝 Membuat data user...');
+    Logger.log('   User ID: ' + userId);
+    Logger.log('   Email: ' + email);
+
+    // Format timestamp sebagai string ISO untuk kompatibilitas
+    const now = new Date().toISOString();
+
+    const newUser = {
+      uid: userId,
+      email: email,
+      displayName: userData.displayName || email.split('@')[0],
+      role: userData.role || 'admin',
+      companyId: userData.companyId || '',
+      createdAt: now,
+      updatedAt: now,
+      isActive: true
+    };
+
+    Logger.log('   Display Name: ' + newUser.displayName);
+    Logger.log('   Role: ' + newUser.role);
+    Logger.log('   Timestamp: ' + now);
+
+    Logger.log('\n🔄 Menulis ke Firestore collection "users"...');
+    Logger.log('   Document path: users/' + userId);
+
+    // Try-catch untuk createDocument
+    try {
+      // Coba method 1: createDocument dengan path lengkap
+      firestore.createDocument('users/' + userId, newUser);
+      Logger.log('✅ Method createDocument berhasil!');
+    } catch (createError) {
+      Logger.log('⚠️  Method createDocument gagal: ' + createError.message);
+      Logger.log('🔄 Mencoba alternative method...');
+
+      // Alternative: Gunakan updateDocument dengan create flag
+      try {
+        firestore.updateDocument('users/' + userId, newUser, true);
+        Logger.log('✅ Method updateDocument berhasil!');
+      } catch (updateError) {
+        Logger.log('❌ Method updateDocument juga gagal: ' + updateError.message);
+        throw new Error('Tidak bisa menulis ke Firestore: ' + updateError.message);
+      }
+    }
+
+    Logger.log('✅ User berhasil dibuat!');
+    return { success: true, message: 'User berhasil dibuat', userId: userId };
+  } catch (error) {
+    Logger.log('\n❌ Error creating user: ' + error.message);
+    Logger.log('   Error name: ' + error.name);
+    if (error.stack) {
+      Logger.log('   Stack: ' + error.stack);
+    }
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Membuat user baru (dengan validasi)
+ * Gunakan ini setelah user pertama sudah ada dan index sudah dibuat
  */
 function createUser(userData) {
   try {
     const firestore = getFirestore();
     const email = userData.email;
 
-    // Cek apakah user sudah ada
-    const existingUsers = firestore.query('users').where('email', '==', email).execute();
+    // Cek apakah user sudah ada (butuh index di Firestore)
+    try {
+      const existingUsers = firestore.query('users').where('email', '==', email).execute();
 
-    if (existingUsers.length > 0) {
-      return { success: false, message: 'Email sudah terdaftar' };
+      if (existingUsers.length > 0) {
+        return { success: false, message: 'Email sudah terdaftar' };
+      }
+    } catch (queryError) {
+      // Jika query gagal (index belum ada), skip validation
+      Logger.log('⚠️  Query validation skipped (index mungkin belum ada)');
     }
 
     const userId = Utilities.getUuid();
