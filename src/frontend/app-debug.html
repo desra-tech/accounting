@@ -1,0 +1,346 @@
+<script>
+// ========================================
+// UMKM Accounting System - Frontend App
+// ========================================
+
+// Global variables
+let currentUser = null;
+let currentCompany = null;
+let currentPage = 'dashboard';
+
+// Initialize app on DOM load
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Initializing UMKM Accounting System...');
+  initApp();
+});
+
+function initApp() {
+  console.log('📋 Setting up application...');
+
+  // Remove loading text
+  removeLoadingText();
+
+  // Initialize components
+  setupNavigation();
+  setupTabs();
+
+  // Load user data
+  loadUserData();
+}
+
+function removeLoadingText() {
+  console.log('🧹 Removing loading text...');
+
+  // Find and remove "Loading aplikasi..." text
+  const allElements = document.querySelectorAll('body > p, body > div:not(.container)');
+  allElements.forEach(function(el) {
+    if (el.textContent && el.textContent.trim().includes('Loading aplikasi')) {
+      console.log('   Removed: ' + el.textContent.trim());
+      el.remove();
+    }
+  });
+}
+
+function loadUserData() {
+  console.log('📞 Calling backend: getCurrentUser()...');
+  showLoading();
+
+  // Set timeout to prevent infinite loading
+  const timeoutId = setTimeout(function() {
+    hideLoading();
+    console.error('⏱️ TIMEOUT: getCurrentUser() took more than 10 seconds');
+    console.error('   Please check:');
+    console.error('   1. Backend functions are updated');
+    console.error('   2. Firebase credentials are correct');
+    console.error('   3. Internet connection');
+
+    alert('Error: Request timeout (10s).\n\nPlease check:\n1. Backend functions updated?\n2. Firebase credentials correct?\n3. Internet connection?');
+
+    // Load as guest
+    loadAsGuest();
+  }, 10000); // 10 second timeout
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      clearTimeout(timeoutId);
+      hideLoading();
+
+      console.log('✅ getCurrentUser() response:', result);
+
+      if (result && result.success && result.user) {
+        console.log('👤 User authenticated successfully!');
+        console.log('   Email: ' + result.user.email);
+        console.log('   Role: ' + result.user.role);
+        console.log('   Display Name: ' + result.user.displayName);
+
+        currentUser = result.user;
+        displayUserInfo();
+        loadDashboardData();
+      } else {
+        console.warn('⚠️  getCurrentUser() returned no user');
+        console.log('   Response:', result);
+
+        if (result && result.message) {
+          alert('Login failed: ' + result.message);
+        }
+
+        loadAsGuest();
+      }
+    })
+    .withFailureHandler(function(error) {
+      clearTimeout(timeoutId);
+      hideLoading();
+
+      console.error('❌ Backend error:', error);
+      console.error('   Message:', error.message);
+      console.error('   Stack:', error.stack || 'No stack trace');
+
+      alert('Backend error: ' + error.message + '\n\nPlease check Apps Script logs.');
+
+      loadAsGuest();
+    })
+    .getCurrentUser();
+}
+
+function loadAsGuest() {
+  console.log('👤 Loading as Guest User (fallback)');
+
+  document.getElementById('userName').textContent = 'Guest User';
+  document.getElementById('userRole').textContent = 'guest';
+  document.getElementById('companyName').textContent = 'UMKM';
+
+  // Hide admin menus
+  document.querySelectorAll('[data-role="admin"]').forEach(function(el) {
+    el.style.display = 'none';
+  });
+}
+
+function displayUserInfo() {
+  console.log('📝 Displaying user info...');
+
+  if (!currentUser) {
+    console.warn('   No currentUser data');
+    return;
+  }
+
+  const userName = currentUser.displayName || currentUser.email || 'User';
+  const userRole = currentUser.role || 'user';
+  const companyName = 'UMKM'; // TODO: Get from company data
+
+  document.getElementById('userName').textContent = userName;
+  document.getElementById('userRole').textContent = userRole;
+  document.getElementById('companyName').textContent = companyName;
+
+  console.log('   Display name: ' + userName);
+  console.log('   Role: ' + userRole);
+
+  // Hide admin-only menus for regular users
+  if (userRole !== 'admin') {
+    console.log('   Hiding admin menus (user is not admin)');
+    document.querySelectorAll('[data-role="admin"]').forEach(function(el) {
+      el.style.display = 'none';
+    });
+  }
+}
+
+function loadDashboardData() {
+  console.log('📊 Loading dashboard statistics...');
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      console.log('✅ Dashboard data received:', result);
+
+      if (result && result.success && result.data) {
+        updateDashboardStats(result.data);
+      } else {
+        console.warn('⚠️  Dashboard returned no data');
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Dashboard error:', error);
+    })
+    .getDashboardStats();
+}
+
+function updateDashboardStats(data) {
+  if (!data) {
+    console.warn('No dashboard data to update');
+    return;
+  }
+
+  console.log('📈 Updating dashboard stats...');
+  console.log('   Total Cash: ' + data.totalCash);
+  console.log('   Monthly Revenue: ' + data.monthlyRevenue);
+  console.log('   Monthly Expense: ' + data.monthlyExpense);
+  console.log('   Monthly Profit: ' + data.monthlyProfit);
+
+  document.getElementById('totalCash').textContent = formatCurrency(data.totalCash || 0);
+  document.getElementById('monthlyRevenue').textContent = formatCurrency(data.monthlyRevenue || 0);
+  document.getElementById('monthlyExpense').textContent = formatCurrency(data.monthlyExpense || 0);
+  document.getElementById('monthlyProfit').textContent = formatCurrency(data.monthlyProfit || 0);
+}
+
+function setupNavigation() {
+  console.log('🧭 Setting up navigation...');
+
+  const navItems = document.querySelectorAll('.nav-item');
+  console.log('   Found ' + navItems.length + ' navigation items');
+
+  navItems.forEach(function(item) {
+    item.addEventListener('click', function() {
+      const page = this.getAttribute('data-page');
+      console.log('   Navigation clicked: ' + page);
+      showPage(page);
+    });
+  });
+}
+
+function showPage(pageName) {
+  console.log('📄 Showing page: ' + pageName);
+
+  // Update active menu
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.classList.remove('active');
+    if (item.getAttribute('data-page') === pageName) {
+      item.classList.add('active');
+    }
+  });
+
+  // Update active page
+  document.querySelectorAll('.page').forEach(function(page) {
+    page.classList.remove('active');
+  });
+
+  const pageElement = document.getElementById(pageName + '-page');
+  if (pageElement) {
+    pageElement.classList.add('active');
+    currentPage = pageName;
+    loadPageData(pageName);
+  } else {
+    console.error('❌ Page not found: ' + pageName + '-page');
+  }
+}
+
+function loadPageData(pageName) {
+  console.log('📦 Loading data for page: ' + pageName);
+
+  switch(pageName) {
+    case 'dashboard':
+      loadDashboardData();
+      break;
+    case 'master-data':
+      console.log('   Master Data - Coming soon');
+      break;
+    case 'journal':
+      console.log('   Journal - Coming soon');
+      break;
+    case 'reports':
+      console.log('   Reports - Coming soon');
+      break;
+    case 'inventory':
+      console.log('   Inventory - Coming soon');
+      break;
+    case 'debt-receivable':
+      console.log('   Debt/Receivable - Coming soon');
+      break;
+    default:
+      console.warn('   Unknown page: ' + pageName);
+  }
+}
+
+function setupTabs() {
+  console.log('📑 Setting up tabs...');
+
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  console.log('   Found ' + tabButtons.length + ' tab buttons');
+
+  tabButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
+      const parent = this.closest('.tabs');
+
+      console.log('   Tab clicked: ' + tabName);
+
+      // Update active tab button
+      parent.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      this.classList.add('active');
+
+      // Update active tab pane
+      const content = parent.nextElementSibling;
+      if (content) {
+        content.querySelectorAll('.tab-pane').forEach(function(pane) {
+          pane.classList.remove('active');
+        });
+
+        const targetPane = document.getElementById(tabName + '-tab');
+        if (targetPane) {
+          targetPane.classList.add('active');
+        }
+      }
+    });
+  });
+}
+
+// ========================================
+// Utility Functions
+// ========================================
+
+function formatCurrency(amount) {
+  return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+}
+
+function showLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.add('active');
+  }
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+}
+
+function showError(message) {
+  console.error('❌ Error:', message);
+  alert('Error: ' + message);
+}
+
+function showSuccess(message) {
+  console.log('✅ Success:', message);
+  alert('Success: ' + message);
+}
+
+// ========================================
+// Quick Actions (Dashboard buttons)
+// ========================================
+
+function showReceiptForm() {
+  console.log('💵 Opening Receipt form...');
+  showPage('journal');
+  // TODO: Switch to receipt tab
+}
+
+function showExpenseForm() {
+  console.log('💸 Opening Expense form...');
+  showPage('journal');
+  // TODO: Switch to expense tab
+}
+
+function showCapitalForm() {
+  console.log('💰 Opening Capital form...');
+  showPage('journal');
+  // TODO: Switch to capital tab
+}
+
+// ========================================
+// App loaded successfully
+// ========================================
+
+console.log('✅ App script loaded successfully!');
+console.log('📌 Ready for user interaction');
+</script>

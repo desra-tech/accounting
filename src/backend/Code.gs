@@ -9,14 +9,8 @@
  * Fungsi utama untuk menampilkan web app
  */
 function doGet(e) {
-  const user = Session.getActiveUser().getEmail();
-
-  if (!user) {
-    return HtmlService.createHtmlOutputFromFile('login')
-      .setTitle('Login - Sistem Keuangan UMKM')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-  }
-
+  // Apps Script sudah handle Google authentication otomatis
+  // Langsung load aplikasi
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('Sistem Keuangan UMKM')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -41,6 +35,40 @@ function getUserInfo() {
     user: user,
     company: company
   };
+}
+
+/**
+ * Get dashboard statistics
+ */
+function getDashboardStats() {
+  try {
+    const user = getCurrentUser();
+
+    if (!user || !user.success) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
+    // TODO: Calculate actual stats from transactions
+    // For now, return zero values
+    return {
+      success: true,
+      data: {
+        totalCash: 0,
+        monthlyRevenue: 0,
+        monthlyExpense: 0,
+        monthlyProfit: 0
+      }
+    };
+  } catch (error) {
+    Logger.log('Error in getDashboardStats: ' + error.message);
+    return {
+      success: false,
+      message: error.message
+    };
+  }
 }
 
 // ==================== API ENDPOINTS ====================
